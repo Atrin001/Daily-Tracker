@@ -1,43 +1,48 @@
 # GitHub and hosting setup
 
-Use GitHub for Roval's source code, version history, and validation. For the full
-production app, use ChatGPT Sites today or complete the standalone Cloudflare
-authentication adaptation described in [`DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md).
+Use GitHub for Roval's source code and version history. For the full production
+app, use the existing ChatGPT Site or the independent Cloudflare Workers + D1
+path described in [`DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md).
 
-## Upload this package
+## Current repository workflow
 
-1. Extract the ZIP.
-2. Create a new GitHub repository without an auto-generated README.
-3. Upload every extracted file, including `.github`, `.openai`, and `.gitignore`.
-4. Commit the files.
-5. The included GitHub Action will install, lint, test, and build Roval on pushes
-   and pull requests.
-
-Do not commit secrets or `.env` files.
-
-## Run locally
-
-Requirements: Linux or WSL2, Node.js 22.13 or newer, Git, `flock`, `curl`, and GNU `timeout`.
+1. Keep `main` as the stable branch.
+2. Make changes on a feature/deployment branch.
+3. Review the pull-request diff before merging.
+4. Validate in an environment with npm registry access:
 
 ```bash
 npm ci
 npm run lint
 npm test
+```
+
+5. Preview the hosted build, then merge/deploy when ready.
+
+The repository may show GitHub Pages jobs, but Pages is static hosting and is not
+a full Roval runtime test. Roval uses API routes, authenticated cloud sync, and
+D1 storage.
+
+## Run locally
+
+Requirements: Node.js 22.13 or newer and npm. Linux/WSL2 is recommended for the
+bundled Sites validation scripts.
+
+```bash
+npm ci
 npm run dev
 ```
 
-The existing production login and cloud account boundary are supplied by
-ChatGPT Sites. Local development is intended for interface/code work; sign-in and
-cloud sync should be verified on a hosted deployment.
+## Deployment files
 
-## GitHub Pages warning
+- `.openai/hosting.json` keeps the existing ChatGPT Sites project association.
+- `wrangler.jsonc` defines the independent Cloudflare Worker and D1 binding.
+- `CLOUDFLARE_DEPLOY.md` contains Cloudflare preview, permanent deployment, D1,
+  and Access instructions.
+- `HUAWEI_SETUP.md` covers Huawei Health import, Android Health Connect, and
+  Huawei Health Kit REST options.
 
-GitHub Pages cannot run Roval's API routes, D1 database, cloud sync, or server-side
-Huawei integration. Publishing only the static frontend there would be an
-incomplete version of Roval.
+## Secrets
 
-Read:
-
-- `DEPLOYMENT_GUIDE.md` for GitHub → Sites and GitHub → Cloudflare options.
-- `HUAWEI_SETUP.md` for Huawei Health import, Android Health Connect, and Health
-  Kit REST options.
+Do not commit `.env` files, Cloudflare API tokens, Huawei client secrets, refresh
+tokens, OAuth credentials, or other private keys.
