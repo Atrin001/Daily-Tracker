@@ -16,14 +16,13 @@ jobs:
         with:
           ref: roval-deploy
           fetch-depth: 0
-      - name: Reconstruct and apply update
+      - name: Apply compressed update patch
         shell: bash
         run: |
           set -euo pipefail
-          cat .roval-update.part* > /tmp/roval-update.tgz.b64
-          base64 -d /tmp/roval-update.tgz.b64 > /tmp/roval-update.tgz
-          tar -xzf /tmp/roval-update.tgz -C .
-          rm -f .roval-update.part* .roval-update-ready .github/workflows/apply-roval-update.yml
+          base64 -d .roval-update.patch.gz.b64 | gzip -d > /tmp/roval.patch
+          patch -p1 < /tmp/roval.patch
+          rm -f .roval-update.patch.gz.b64 .roval-update-ready .github/workflows/apply-roval-update.yml
       - name: Commit applied update
         shell: bash
         run: |
