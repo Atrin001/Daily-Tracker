@@ -1,5 +1,5 @@
-const CACHE = "roval-shell-v2";
-const SHELL = ["/", "/manifest.webmanifest", "/app-icon.svg"];
+const CACHE = "roval-shell-v4";
+const SHELL = ["/", "/manifest.webmanifest", "/app-icon.svg", "/roval-icon-192.png", "/roval-icon-512.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting()));

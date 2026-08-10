@@ -1,121 +1,77 @@
-# Roval — Daily Routine Tracker
+# Roval Daily Tracker
 
-Roval is an installable routine-tracking PWA with a Persian calendar, custom
-habit labels, schedules, reminders, notes, progress analytics, Gemini coaching,
-dark mode, and account-isolated cloud sync.
+Roval is an installable Persian-calendar planner and habit tracker with weighted
+goals, cloud sync, AI coaching, reports, reminders, and a separate wearable
+Health dashboard.
 
-**Start with [GITHUB_SETUP.md](GITHUB_SETUP.md)** for upload, validation,
-deployment, and architecture instructions.
+## Current capabilities
 
-The remainder of this document describes the underlying Vinext/Sites runtime.
+- recurring habits with schedules and progress history
+- one-day planner items for any selected date
+- remove a recurring habit from one day without deleting it everywhere
+- editable past dates
+- wearable Health dashboard with manual entry and JSON/CSV import
+- PWA installation on supported browsers
+- ChatGPT Sites identity/cloud sync
+- Cloudflare Workers + D1 groundwork for independent hosting
+- Cloudflare Access JWT validation for independent account identity
 
----
+## Start here
 
-# Vinext starter reference
+- [`DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md) — GitHub, ChatGPT Sites, Cloudflare, and PWA deployment
+- [`CLOUDFLARE_DEPLOY.md`](CLOUDFLARE_DEPLOY.md) — independent Workers + D1 deployment
+- [`HUAWEI_SETUP.md`](HUAWEI_SETUP.md) — Huawei Band / Huawei Health integration options
+- [`GITHUB_SETUP.md`](GITHUB_SETUP.md) — repository workflow and source layout
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+Automatic Huawei Health synchronization is not active yet. The current app
+supports manual health entry/import; direct Huawei Health Kit sync requires the
+Huawei developer setup and approved health scopes described in
+`HUAWEI_SETUP.md`.
 
-## Prerequisites
+## Development
+
+Requirements:
 
 - Node.js `>=22.13.0`
-- Linux with `flock`, `curl`, and GNU `timeout`
+- npm
+- Linux is recommended for the bundled validation scripts
 
-## Sites Lifecycle
+Common commands:
 
-The Sites lifecycle CLI runs the locked dependency install before returning this checkout. Edit the source under `app/`, then checkpoint when a coherent milestone is ready to inspect or share. The remote Sites builder runs `npm run build` against the pushed commit. Do not repeat install or build as a normal pre-checkpoint step.
-
-This starter does not use `wrangler.jsonc`.
-
-`install:ci` is intentionally a single, non-retrying `npm ci`. It refuses a concurrent install for the same project, consumes a matching image-seeded npm cache with `--prefer-offline` while retaining registry fallback for a missing cache object, otherwise downloads and verifies the complete vinext tarball recorded in `package-lock.json`, limits npm to one socket, and terminates a stalled install. `build` applies a short timeout and then validates the Sites artifact. These helpers target Linux and use GNU `timeout`; they are not native macOS scripts.
-
-Scripts that need writable project-scoped home, npm, XDG, and temporary paths use `scripts/sites-env.sh`. The `dev` and `start` scripts honor the caller's runtime environment and keep Wrangler logs inside the checkout. The generated `.sites-runtime/` directory is disposable and ignored by Git.
-
-## Included Shape
-
-- edit site code under `app/`
-- `app/chatgpt-auth.ts` provides optional dispatch-owned ChatGPT sign-in helpers
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/index.ts` reads the D1 binding from the Cloudflare Worker environment
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
-
-## Workspace Auth Headers
-
-OpenAI workspace sites can read the current user's email from
-`oai-authenticated-user-email`.
-
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
+```bash
+npm ci
+npm run dev
+npm run lint
+npm test
 ```
 
-## Optional Dispatch-Owned ChatGPT Sign-In
+Cloudflare commands:
 
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
+```bash
+npm run build:cloudflare
+npm run deploy:cloudflare
+npm run db:migrate:cloudflare
+```
 
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
+A claimable Cloudflare preview can be started with:
 
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
+```bash
+npm run deploy:temporary
+```
 
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
+That temporary flow uses the latest Wrangler because the repository's pinned
+Wrangler version is older than the version that introduced temporary claimable
+deployments.
 
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
+## Hosting configuration
 
-## Diagnostic Commands
+- `.openai/hosting.json` keeps the existing ChatGPT Sites project association.
+- `wrangler.jsonc` defines the independent Cloudflare Worker and `DB` D1 binding.
+- `vite.config.ts` uses the Cloudflare Vite plugin for Worker builds.
+- `worker/index.ts` is the Worker entry point.
+- `db/` and `drizzle/` contain cloud-sync storage and migrations.
+- `app/chatgpt-auth.ts` accepts ChatGPT Sites identity or a verified Cloudflare
+  Access JWT.
 
-- `npm run install:ci`: perform the one bounded lockfile install
-- `npm run dev`: start the Vite/Vinext development server
-- `npm run build`: build and validate the deployable Sites artifact
-- `npm run start`: start the built Vinext application
-- `npm test`: build, validate, and verify the rendered development-preview metadata
-- `npm run validate:artifact`: recheck an existing artifact's manifest and ESM `default.fetch` export
-- `npm run db:generate`: generate Drizzle migrations after schema changes
-
-Use build and validation commands for targeted diagnosis after a remote failure, not as part of the normal checkpoint path.
-
-The timeout defaults can be overridden for a controlled canary with `SITES_INSTALL_TIMEOUT`, `SITES_INSTALL_KILL_AFTER`, `SITES_BUILD_TIMEOUT`, and `SITES_BUILD_KILL_AFTER`. A timeout fails the command; the helpers never retry an unchanged install or build.
-
-## Learn More
-
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+Do not commit `.env` files, API tokens, Huawei client secrets, refresh tokens,
+or other credentials.

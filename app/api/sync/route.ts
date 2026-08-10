@@ -1,3 +1,5 @@
+import { getAuthenticatedUserFromRequest } from "../../chatgpt-auth";
+
 type StoredRow = {
   payload: string;
   revision: number;
@@ -7,16 +9,13 @@ type StoredRow = {
 
 const MAX_PAYLOAD_BYTES = 1_500_000;
 
-function userEmail(request: Request) {
-  return request.headers.get("oai-authenticated-user-email")?.trim().toLowerCase() || null;
-}
-
 function unauthorized() {
   return Response.json({ error: "Sign in is required for cloud sync." }, { status: 401 });
 }
 
 export async function GET(request: Request) {
-  const email = userEmail(request);
+  const user = await getAuthenticatedUserFromRequest(request);
+  const email = user?.email;
   if (!email) return unauthorized();
   try {
     const { env } = await import("cloudflare:workers");
@@ -30,7 +29,8 @@ export async function GET(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  const email = userEmail(request);
+  const user = await getAuthenticatedUserFromRequest(request);
+  const email = user?.email;
   if (!email) return unauthorized();
   try {
     const { env } = await import("cloudflare:workers");
