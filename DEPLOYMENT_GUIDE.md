@@ -27,8 +27,9 @@ that file when publishing updates to the same Roval Site.
 3. Upload everything from the extracted folder, including hidden folders:
    `.github`, `.openai`, and `.gitignore`.
 4. Commit the files to `main`.
-5. Open the **Actions** tab. The included `Validate Roval` workflow runs install,
-   lint, tests, and the production build on every push and pull request.
+5. For full validation, add or enable a GitHub Actions workflow that runs `npm ci`,
+   `npm run lint`, and `npm test`. The repository may also show a GitHub Pages
+   workflow, but Pages is static hosting and is not a full Roval server-runtime test.
 
 ### Option B: Git command line
 
