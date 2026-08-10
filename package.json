@@ -14,8 +14,10 @@
     "validate:artifact": "bash scripts/validate-artifact.sh",
     "lint": "bash scripts/sites-env.sh -- eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate",
-    "deploy:cloudflare": "wrangler deploy",
-    "deploy:temporary": "npx wrangler@latest deploy --temporary"
+    "build:cloudflare": "vinext build",
+    "deploy:cloudflare": "npm run build:cloudflare && wrangler deploy",
+    "deploy:temporary": "npm run build:cloudflare && npx wrangler@latest deploy --temporary",
+    "db:migrate:cloudflare": "wrangler d1 migrations apply DB --remote"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2",
