@@ -44,6 +44,34 @@ The temporary preview can validate the UI and Worker runtime. Account cloud sync
 will remain unavailable until Cloudflare Access is configured and the D1
 migration is applied.
 
+### If Wrangler says `reused` and then `Invalid access token`
+
+Wrangler caches the temporary preview account in the current operating-system
+user's global Wrangler configuration. If that temporary token expires or becomes
+invalid, a later `--temporary` deploy can try to reuse the stale account and fail
+with Cloudflare API authentication errors such as code `9109` or `10000`.
+
+Clear the cached temporary account and create a fresh one:
+
+```bash
+npm run deploy:temporary:fresh
+```
+
+This runs `wrangler logout` first, which clears Wrangler's cached temporary
+account, then rebuilds and runs `wrangler deploy --temporary` again. A successful
+retry should say the temporary account was **created** rather than **reused** and
+print a new private claim URL.
+
+If you manually run the recovery commands instead, use:
+
+```bash
+npx wrangler@latest logout
+npm run deploy:temporary
+```
+
+Do not post claim URLs in chats, issues, logs, screenshots, or source control.
+Anyone who has a valid claim URL can claim the temporary Cloudflare account.
+
 ## Permanent deployment
 
 After you have a permanent Cloudflare account:
