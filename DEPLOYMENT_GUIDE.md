@@ -62,46 +62,43 @@ For a normal UI update, users do not reinstall Roval. It is the same hosted PWA.
 
 ## Independent hosting: Cloudflare Workers
 
-Roval already uses vinext, Cloudflare Workers APIs, and D1-compatible code, so
-Cloudflare Workers is the most natural independent host.
+Roval is now prepared for an independent Cloudflare Workers + D1 deployment.
+The root `wrangler.jsonc` declares the Worker entry point and the `DB` binding,
+and the Vite configuration uses that root config for Cloudflare builds.
 
-Cloudflare's current Next.js/Workers tooling supports full-stack route handlers,
-server rendering, and Workers deployments. The vinext project also deploys with
-Wrangler.
+The independent identity layer supports Cloudflare Access without weakening the
+existing ChatGPT Sites path. Roval validates the signed Access JWT before using
+the email claim for cloud-sync ownership. Configure these Worker variables after
+you create the Access application:
 
-However, the current Roval account boundary relies on headers injected by
-ChatGPT Sites:
+- `CF_ACCESS_TEAM_DOMAIN`
+- `CF_ACCESS_AUD`
 
-```text
-oai-authenticated-user-email
+For a permanent account, the intended sequence is:
+
+```bash
+npm ci
+npx wrangler login
+npm run deploy:cloudflare
+npm run db:migrate:cloudflare
 ```
 
-Before an independent Cloudflare production deployment is considered complete,
-replace or extend that identity layer. A sensible personal deployment is:
+Wrangler can automatically provision the D1 resource declared without an ID in
+`wrangler.jsonc`. The migration directory is `drizzle/`.
 
-- Cloudflare Access in front of the Worker.
-- One-time PIN or another identity provider for login.
-- Validate the Cloudflare Access JWT on the server.
-- Use the verified user's email as the key for the existing `user_states` D1
-  records.
+For a claimable preview before Cloudflare login, current Wrangler supports
+`--temporary`. Cloudflare requires you personally to accept its Terms and
+Privacy Policy before creating that temporary account, so use:
 
-Do not simply trust a browser-supplied email header.
+```bash
+npm ci
+npm run deploy:temporary
+```
 
-### Cloudflare deployment shape
+after you have accepted those terms. Keep the printed claim URL private and
+claim the deployment within Wrangler's stated window if you want to keep it.
 
-After the auth adaptation:
-
-1. Create a Cloudflare account and Workers project.
-2. Create a D1 database for Roval.
-3. Apply `drizzle/0000_marvelous_iron_fist.sql` to that database.
-4. Bind the D1 database as `DB`.
-5. Deploy the vinext Worker with Wrangler.
-6. Enable Cloudflare Access for the production Worker/custom domain.
-7. Add only server-side secrets through Cloudflare secret/environment settings.
-8. Point a custom domain at the Worker if desired.
-
-Cloudflare preview URLs can be used to review new Worker versions before
-production deployment.
+See `CLOUDFLARE_DEPLOY.md` for the complete production and Access setup.
 
 ## Install Roval as an app
 
