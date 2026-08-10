@@ -1,4 +1,4 @@
-const CACHE = "roval-shell-v2";
+const CACHE = "roval-shell-v3";
 const SHELL = ["/", "/manifest.webmanifest", "/app-icon.svg"];
 
 self.addEventListener("install", (event) => {

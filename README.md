@@ -1,17 +1,13 @@
-# Roval — Daily Routine Tracker
+# Roval Daily Tracker
 
-Roval is an installable routine-tracking PWA with a Persian calendar, custom
-habit labels, schedules, reminders, notes, progress analytics, Gemini coaching,
-dark mode, and account-isolated cloud sync.
+An installable Persian-calendar habit tracker with weighted goals, cloud sync,
+AI coaching, reports, reminders, and a separate wearable Health dashboard.
 
-**Start with [GITHUB_SETUP.md](GITHUB_SETUP.md)** for upload, validation,
-deployment, and architecture instructions.
-
-The remainder of this document describes the underlying Vinext/Sites runtime.
-
----
-
-# Vinext starter reference
+For Huawei Band 11 and Huawei Health data, start with
+[`HUAWEI_SETUP.md`](HUAWEI_SETUP.md). For GitHub, PWA installation, ChatGPT Sites,
+and independent Cloudflare hosting, see [`DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md). The app supports manual entry and
+JSON/CSV import now. Direct background Health Kit sync requires Huawei Developer
+approval and server credentials.
 
 A clean full-stack starter running on
 [vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
