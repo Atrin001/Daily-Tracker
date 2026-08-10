@@ -10,7 +10,14 @@ export const metadata: Metadata = {
   title: "Roval | Daily Routine Tracker",
   description: "A daily routine tracker with a Persian calendar, progress insights, and AI analysis",
   other: { "codex-preview": "development" },
-  icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/roval-icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    shortcut: "/favicon.svg",
+    apple: [{ url: "/roval-icon-192.png", sizes: "192x192", type: "image/png" }],
+  },
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, statusBarStyle: "default", title: "Roval" },
 };
