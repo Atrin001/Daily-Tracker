@@ -29,6 +29,13 @@ const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
+    // ChatGPT Sites owns this route before requests reach the Worker. On an
+    // independent Cloudflare deployment, translate the same UI link to the
+    // Cloudflare Access logout endpoint instead.
+    if (url.pathname === "/signout-with-chatgpt" && !request.headers.get("oai-authenticated-user-email")) {
+      return Response.redirect(new URL("/cdn-cgi/access/logout", request.url), 302);
+    }
+
     if (url.pathname === "/_vinext/image") {
       if (!env.IMAGES) return new Response("Image transformation is not configured", { status: 404 });
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];
