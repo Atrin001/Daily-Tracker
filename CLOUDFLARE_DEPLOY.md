@@ -1,67 +1,101 @@
 # Deploy Roval on Cloudflare Workers
 
-Roval can be hosted independently on Cloudflare Workers with D1 for cloud sync.
-The source remains compatible with the existing ChatGPT Sites deployment.
+Roval can run independently on Cloudflare Workers with D1 for cloud sync while
+remaining compatible with the existing ChatGPT Sites deployment.
 
-## Why Cloudflare
+## What is already prepared
 
-The project already runs on the Cloudflare Worker runtime and uses a D1 binding
-named `DB`. Cloudflare Workers can also connect directly to GitHub and build on
-push.
+- `wrangler.jsonc` defines the Worker entry point and the `DB` D1 binding.
+- The D1 binding intentionally has no database ID. Wrangler can automatically
+  provision it on the first permanent deployment and write the ID back to the
+  config.
+- `vite.config.ts` now lets the Cloudflare Vite plugin read the root Wrangler
+  config instead of forcing the old ChatGPT Sites placeholder database ID.
+- `app/chatgpt-auth.ts` supports both ChatGPT Sites identity and a verified
+  Cloudflare Access application JWT.
+- `app/api/sync/route.ts` keys cloud data only by the verified signed-in email.
+- The installed PWA remains the same web application; users normally do not
+  reinstall it after a deployment.
 
-## Fastest path: deploy from GitHub
+## Temporary preview without Cloudflare login
 
-1. Push the current Roval source to GitHub.
-2. In Cloudflare Dashboard open **Workers & Pages → Create → Import a repository**.
-3. Select the Roval repository.
-4. Use the default deploy command: `npx wrangler deploy`.
-5. If Wrangler offers automatic framework configuration, let it create its
-   configuration pull request and preview deployment.
-6. Create a D1 database named `roval-db` and bind it to the Worker as `DB`.
-7. Apply `drizzle/0000_marvelous_iron_fist.sql` to the production D1 database.
+Cloudflare supports claimable temporary Workers accounts in Wrangler 4.102.0+
+with `wrangler deploy --temporary`. Cloudflare requires the person creating the
+temporary account to accept its Terms and Privacy Policy, so an automated agent
+must not accept that legal agreement for you.
+
+After accepting those terms yourself, run:
+
+```bash
+npm ci
+npm run deploy:temporary
+```
+
+The script builds Roval with vinext/Vite and runs the latest Wrangler with the
+`--temporary` flag. Wrangler prints:
+
+- a temporary `workers.dev` preview URL;
+- a private claim URL.
+
+Treat the claim URL like a password. Claim it within the time window shown by
+Wrangler if you want to keep the Worker and supported resources.
+
+The temporary preview can validate the UI and Worker runtime. Account cloud sync
+will remain unavailable until Cloudflare Access is configured and the D1
+migration is applied.
+
+## Permanent deployment
+
+After you have a permanent Cloudflare account:
+
+```bash
+npm ci
+npx wrangler login
+npm run deploy:cloudflare
+npm run db:migrate:cloudflare
+```
+
+On first deployment, Wrangler can automatically create the D1 resource declared
+by the `DB` binding. Check the resulting `wrangler.jsonc` into GitHub after
+Wrangler writes the provisioned database information into it.
+
+`npm run db:migrate:cloudflare` applies the SQL migrations in `drizzle/` to the
+remote D1 database. The current migration creates `user_states`, which is the
+table used by Roval cloud sync.
 
 ## Secure sign-in with Cloudflare Access
 
-Protect the entire Worker/custom domain with Cloudflare Access. Roval supports
-both the existing ChatGPT Sites identity and Cloudflare Access identity.
+Protect the production Worker/custom domain with a Cloudflare Access self-hosted
+application. Configure an identity provider such as One-time PIN or another
+provider you prefer.
 
-Set these Worker variables:
+Add these Worker variables after Access is created:
 
 - `CF_ACCESS_TEAM_DOMAIN` — for example `your-team.cloudflareaccess.com`
 - `CF_ACCESS_AUD` — the Access application's Audience (AUD) tag
 
-Roval validates the signed `Cf-Access-Jwt-Assertion` token, including its issuer,
-audience, expiry, signing key, and signature, before using the email claim for
-cloud-sync ownership. Do not replace this with a client-supplied email header.
+Roval reads the `Cf-Access-Jwt-Assertion` request header and validates the JWT
+signature, key ID, issuer, audience, expiry, and not-before value before using
+its email claim. It fetches the current Access public signing keys from the
+team's `/cdn-cgi/access/certs` endpoint, so signing-key rotation does not require
+hard-coded certificates.
 
-## Database
+The Worker translates Roval's existing profile sign-out path to Cloudflare
+Access logout on an independent deployment. ChatGPT Sites continues to own the
+same sign-out path on the original hosted Site.
 
-The Worker expects a D1 binding named `DB`. The existing migration creates the
-`user_states` table used by cloud sync.
+## GitHub-to-Cloudflare after the first deployment
 
-Example command after Cloudflare login:
+Once the Worker has been claimed/configured, you can connect the
+`Atrin001/Daily-Tracker` repository in the Cloudflare dashboard and deploy from
+Git. Use the `main` branch only after the draft PR has been tested and merged.
 
-```bash
-npx wrangler d1 create roval-db
-npx wrangler d1 execute roval-db --remote --file=./drizzle/0000_marvelous_iron_fist.sql
-npx wrangler deploy
-```
-
-## Temporary deployment without Cloudflare login
-
-Newer Wrangler versions support temporary deployments intended for agents and
-development environments:
-
-```bash
-npx wrangler@latest deploy --temporary
-```
-
-Wrangler prints a temporary preview URL and a claim URL. This is useful for
-checking the web UI before attaching your permanent database, Access policy,
-and custom domain. A temporary preview is not the final production setup.
+For a protected production deployment, keep tokens and secrets in Cloudflare or
+GitHub secret storage. Never commit API tokens, Huawei client secrets, OAuth
+refresh tokens, or `.env` files.
 
 ## Install as an app
 
-Once the permanent deployment is available over HTTPS, open it in Chrome/Edge
-or Safari and choose **Install app** / **Add to Home Screen**. Roval's manifest
-and service worker make the hosted web application installable as a PWA.
+After the permanent HTTPS deployment is live, open Roval in Chrome/Edge or
+Safari and choose **Install app** / **Add to Home Screen**. The manifest and
+service worker make the same hosted Roval interface installable as a PWA.
