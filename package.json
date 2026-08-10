@@ -17,6 +17,7 @@
     "build:cloudflare": "vinext build",
     "deploy:cloudflare": "npm run build:cloudflare && wrangler deploy",
     "deploy:temporary": "npm run build:cloudflare && npx wrangler@latest deploy --temporary",
+    "deploy:temporary:fresh": "npx wrangler@latest logout && npm run deploy:temporary",
     "db:migrate:cloudflare": "wrangler d1 migrations apply DB --remote"
   },
   "dependencies": {
