@@ -66,8 +66,7 @@ table used by Roval cloud sync.
 ## Secure sign-in with Cloudflare Access
 
 Protect the production Worker/custom domain with a Cloudflare Access self-hosted
-application. Configure an identity provider such as One-time PIN or another
-provider you prefer.
+application. Configure an identity provider you prefer.
 
 Add these Worker variables after Access is created:
 
